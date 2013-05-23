@@ -10,7 +10,7 @@
 #include <string.h>
 #include "imu.h"
 #include "pitr_sem.h"
-
+#include "car.h"
 
 #define MAGADDR (0x0C) //was 0x0c
 
@@ -119,12 +119,25 @@ while(1)
 void ImuInit(BYTE prio, OS_SEM * pSem)
 {
 	I2CInit();
+#ifdef LITTLE_CAR
+
 
 	CPU_Pins[27].function(CPUPIN27_SCL);
 	CPU_Pins[28].function(CPUPIN28_SDA);
 
 	CPU_Pins[79].function(CPUPIN79_UTXD2    );
 	CPU_Pins[80].function(CPUPIN80_URXD2    );
+
+#elif BIG_CAR
+
+	CPU_Pins[27].function(CPUPIN27_GPIO);
+	CPU_Pins[28].function(CPUPIN28_GPIO);
+
+	CPU_Pins[79].function(CPUPIN79_SCL);
+	CPU_Pins[80].function(CPUPIN80_SDA);
+#else
+#error No Car defined
+#endif
 
 
 

@@ -12,7 +12,7 @@
 #include <pins.h>
 
 #include "servo.h"
-
+#include "car.h"
 
 #define SERVO_ZERO  (75000)
 #define SERVO_MIN  ( 50000)
@@ -101,10 +101,53 @@ icnt[3]++;
 
 void InitServos()
 {
+
+#ifdef LITTLE_CAR
 CPU_Pins[8].function(CPUPIN8_DTOUT0);
 CPU_Pins[9].function(CPUPIN9_DTOUT1 );
 CPU_Pins[13].function(CPUPIN13_DTOUT2);
 CPU_Pins[14].function(CPUPIN14_DTOUT3);
+#elif BIG_CAR
+CPU_Pins[8].function(CPUPIN8_DTIN0);
+CPU_Pins[9].function(CPUPIN9_DTOUT1 );
+CPU_Pins[13].function(CPUPIN13_DTOUT2);
+CPU_Pins[14].function(CPUPIN14_DTOUT3);
+
+
+
+CPU_Pins[61].function(CPUPIN61_GPIO);   
+CPU_Pins[62].function(CPUPIN62_GPIO);   
+CPU_Pins[63].function(CPUPIN63_GPIO);   
+CPU_Pins[64].function(CPUPIN64_GPIO);   
+CPU_Pins[65].function(CPUPIN65_GPIO);   
+CPU_Pins[66].function(CPUPIN66_GPIO);   
+CPU_Pins[67].function(CPUPIN67_GPIO);   
+CPU_Pins[68].function(CPUPIN68_GPIO);   
+
+CPU_Pins[61].read();		      		
+CPU_Pins[62].read();		      		
+CPU_Pins[63].read();		      		
+CPU_Pins[64].read();		      		
+CPU_Pins[65].read();		      		
+CPU_Pins[66].read();		      		
+CPU_Pins[67].read();		      		
+CPU_Pins[68].read();		      		
+ 
+
+#else
+#error No Car defined
+#endif
+
+
+	
+
+
+
+
+
+
+
+
 
 
 servo_value[0]=SERVO_ZERO;

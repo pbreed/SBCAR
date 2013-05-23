@@ -357,7 +357,6 @@ void UBX_Parser(uint8_t c)
 }
 
 
-#define GPS_UART (1)
 void GpsTask(void *p)
 {
 

@@ -10,6 +10,8 @@
 #include <string.h>
 #include "dsm2_sub.h"
 #include "sensor_config.h"
+#include "car.h"
+
 
 #define SM_TASK_STK (256)
 #define SmOSSimpleTaskCreate(x,p) { static DWORD   func_##x_Stk[SM_TASK_STK] __attribute__( ( aligned( 4 ) ) ); OSTaskCreate(x,NULL,(void *)&func_##x_Stk[SM_TASK_STK],(void*)func_##x_Stk,p); }
@@ -52,7 +54,6 @@ if(n==16)
 if(n>>19) n=18;
 }
 
-#define DSMUART (2)
 
 
 

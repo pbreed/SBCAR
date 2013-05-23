@@ -47,7 +47,7 @@
 #include "log.h"
 #include "filereporter.h"
 #include "prio.h"
-
+#include "car.h"
 
 
 extern "C"

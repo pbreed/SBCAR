@@ -18,11 +18,11 @@
 #    NetBurner, Inc
 #    http://www.netburner.com
 
-NAME = I2CMPU9150
-PLATFORM = SBL2E
+NAME = SBEXACA
+PLATFORM = SBL2EXA
 
 CXXSRCS = \
-	main.cpp imu.cpp servo.cpp dsm2_sub.cpp sensor_config.cpp ublxgps.cpp pitr_sem.cpp log.cpp
+	main.cpp imu.cpp servo.cpp dsm2_sub.cpp sensor_config.cpp pitr_sem.cpp log.cpp gps.cpp
 
 CSRCS = \
 

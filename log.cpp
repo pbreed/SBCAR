@@ -20,7 +20,7 @@
 #include "log.h"
 #include "sensor_config.h"
 #include "filereporter.h" 
-
+#include "car.h"
 
 void IRQ_WriteCharNoBlock( int portnum, char c );
 
@@ -66,7 +66,6 @@ OS_CRIT LogShiftCrit;
 #define LOG_REC_ESC  (0xEC)
 #define LOG_REC_TICK (0xED)
 
-#define LOG_UART (0)
 
 static BOOL bBlock;
 
