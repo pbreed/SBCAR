@@ -34,7 +34,7 @@
 #include <autoupdate.h>
 #include <i2cmaster.h>
 #include <sim.h>
-#include <syslog.h>
+//#include <syslog.h>
 #include <taskmon.h>
 #include <math.h>
 
@@ -165,7 +165,7 @@ void UserMain(void *pd)
 
     OSChangePrio( MAIN_PRIO ); // set standard UserMain task priority
 
-	BcastSysLogPrintf("Application built on %s on %s\r\nWait...", __TIME__, __DATE__ );
+	//BcastSysLogPrintf("Application built on %s on %s\r\nWait...", __TIME__, __DATE__ );
 
 	pUserUdpProcessFunction=MyUDPProcessFunction;
 
@@ -178,7 +178,7 @@ void UserMain(void *pd)
 	InitLog();
 
 	LoadSensorConfig();
-		BcastSysLogPrintf("1");
+	   // BcastSysLogPrintf("1");
 	
 	ImuInit(IMU_PRIO,&DataSem);
 	
@@ -262,7 +262,7 @@ void UserMain(void *pd)
 	
 	if(LSecs!=Secs) 
 		{
-		 BcastSysLogPrintf("Tick %d Iat:%ld lon:%ld SAT:%d\r\n",Secs,GPS_Result.LAT,GPS_Result.LON,GPS_Result.numSV); 
+		// BcastSysLogPrintf("Tick %d Iat:%ld lon:%ld SAT:%d\r\n",Secs,GPS_Result.LAT,GPS_Result.LON,GPS_Result.numSV); 
 		//SysLogPrintf(ipa_syslog_addr,514,
 		 LogMaxMin(mgz,mmx,mmy,ngz,nmx,nmy);
 		 mgz=0;
