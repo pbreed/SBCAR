@@ -45,6 +45,7 @@ BYTE        GPSfix;         // GPSfix Type, range 0..6
 DWORD        Hacc;           // mm Horizontal Accuracy Estimate
 }; 
 
+#ifdef BIG_CAR
 
 struct BD960_GPS
 {
@@ -71,4 +72,4 @@ struct BD960_GPS
 
 extern volatile BD960_GPS bd960_Result;
 
-
+#endif

@@ -59,6 +59,7 @@ typedef enum tNames
 #define MAX_TYPE (0x1A)
 #define SGPS_TYPE  (0x1B)
 #define TGPS_TYPE (0x1C)
+#define STEER_TYPE (0x1D)
 
 OS_CRIT LogShiftCrit;
 
@@ -541,7 +542,7 @@ while(*cp) PutEscapedByte(*cp++);
 PutRawByte(LOG_REC_END); 
 }
 
-void ShowTGps(BD960_GPS & item)
+/*void ShowTGps(BD960_GPS & item)
 {
 	LogStart(TGPS_TYPE,"TGPS");
 	LogElement(lattitude,"lat" );
@@ -564,8 +565,17 @@ void ShowTGps(BD960_GPS & item)
 	LogElement(flag2,"F2");
 
 }
+*/
 
 
+void ShowSteer(SteerLoopMsg & item)
+{
+	LogStart(STEER_TYPE,"STEER");
+	LogElement( 	deg_heading,"CHD");
+	LogElement( 	adj_heading,"THD");
+	LogElement( 	err,"ERR"    );    
+	LogElement( 	steer,"STEER");      
+}
 
 void DumpRecords()
 {
@@ -576,7 +586,10 @@ ShowImuRec((*((ImuRegisters * )& item))) ;
 ShowGps((*((GPS_READING  * )&item)));
 ShowRC((*((DSM2_READING *)&item)));
 ShowSmGps(((*(SMGPS_READING *)& item))); 
-ShowTGps(((*(BD960_GPS *)&item)));
+//ShowTGps(((*(BD960_GPS *)&item)));
+
+ShowSteer(((*(SteerLoopMsg *)&item)));
+
 FileReporter::DumpList();
 LogConfig(SensorConfig);
 
@@ -609,9 +622,16 @@ void FileReporter::ShowList()
 
 }
 
-void LogTGps(volatile BD960_GPS & item)
-{
-	LogRawRecord(TGPS_TYPE,(const unsigned char *)&item,sizeof(item));
+//void LogTGps(volatile BD960_GPS & item)
+//{
+//	LogRawRecord(TGPS_TYPE,(const unsigned char *)&item,sizeof(item));
+//
+//}
 
+
+void LogRecord(SteerLoopMsg & item)
+{
+   LogRawRecord(STEER_TYPE,(const unsigned char *)&item,sizeof(item));
 }
+
 

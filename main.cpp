@@ -142,13 +142,6 @@ const float fGZHeadingScale_deg = (-3.8147E-05);  //(250 dps /(200 sps 32768 fs)
 volatile float Target_Heading;
 volatile float Offset_Heading;
 
-typedef struct {
-double deg_heading;
-double adj_heading;
-double err;
-double steer;
-}__attribute__( ( packed ) ) SteerLoopMsg;
-
 
 //AdjustVariable SteerGain("Steer P",0.033);
 //AdjustVariable SteerDGain("Steer D",-0.0001);
@@ -170,7 +163,7 @@ if(slp.steer>1.0) slp.steer=1.0;
 if(slp.steer<-1.0) slp.steer=-1.0;
 
 SetServo(STEER_CH,slp.steer*STEER_SIGN);
-//LogRecord(slp);
+LogRecord(slp);
 
 }
 
@@ -291,7 +284,7 @@ void UserMain(void *pd)
 	{
 		LastGps=GPS_Result.ReadingNum;
 	    LogSmGps(GPS_Result); 
-		LogTGps(bd960_Result);
+		//LogTGps(bd960_Result);
 	}
 	
 	if (LastRc !=DSM2_Result.ReadingNum)
@@ -407,7 +400,7 @@ void UserMain(void *pd)
 	    il.GHeading= GPS_Result.Heading;
 		il.odo=sim.timer[0].tcn;
 
-         //LogImu(il);
+         LogImu(il);
 		}
 		LastImu =IMU_Result.ReadingNum; 
 
