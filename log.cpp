@@ -458,6 +458,7 @@ void ShowImuRec(ImuRegisters & item)
 	LogElement(fIhead,"IH");
 	LogElement(fMhead,"MH");
 	LogElement(GHeading,"GH");
+	LogElement(odo,"Od");
 }
 
 
@@ -535,13 +536,15 @@ PutRawByte(LOG_REC_END);
 void DumpRecords()
 {
 BYTE item[16];
-//ShowConfig((*((sensor_saved_config* )&item))) ;
+ShowConfig((*((sensor_saved_config* )&item))) ;
 ShowMMRec((*((mmax  *)& item)));
 ShowImuRec((*((ImuRegisters * )& item))) ;
 ShowGps((*((GPS_READING  * )&item)));
 ShowRC((*((DSM2_READING *)&item)));
 ShowSmGps(((*(SMGPS_READING *)& item))); 
 FileReporter::DumpList();
+LogConfig(SensorConfig);
+
 }
 
 

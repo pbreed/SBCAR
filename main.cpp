@@ -175,12 +175,12 @@ void UserMain(void *pd)
 	OSSemInit(&DataSem,0);
 
 
-	InitLog();
-											 
+	   									 
 
 	LoadSensorConfig();
 	   // BcastSysLogPrintf("1");
 	
+	InitLog();
 
 	ImuInit(IMU_PRIO,&DataSem);
 	
@@ -266,15 +266,15 @@ void UserMain(void *pd)
 		// BcastSysLogPrintf("Tick %d Iat:%ld lon:%ld SAT:%d\r\n",Secs,GPS_Result.LAT,GPS_Result.LON,GPS_Result.numSV); 
 		//SysLogPrintf(ipa_syslog_addr,514,
 		 LogMaxMin(mgz,mmx,mmy,ngz,nmx,nmy);
-		 static char tbuf[256];
-		 siprintf(tbuf,"TCN=%ld\r\n",sim.timer[0].tcn);  
-		 writestring(LOG_UART,tbuf);
-		 mgz=0;
-		 mmx=0;
-		 mmy=0;
-		 ngz=0;
-		 nmx=0;
-		 nmy=0;
+		 //static char tbuf[256];
+		// siprintf(tbuf,"TCN=%ld\r\n",sim.timer[0].tcn);  
+		// writestring(LOG_UART,tbuf);
+		 mgz=IMU_Result.mz;
+		 mmx=IMU_Result.mx;
+		 mmy=IMU_Result.my;
+		 ngz=IMU_Result.mz;
+		 nmx=IMU_Result.mx;
+		 nmy=IMU_Result.my;
 		 LSecs=Secs;
 		}
  
@@ -318,8 +318,9 @@ void UserMain(void *pd)
 		il.fIhead=fIheading;
 	    il.fMhead=fmh;
 	    il.GHeading= GPS_Result.Heading;
+		il.odo=sim.timer[0].tcn;
 
-         //LogImu(il);
+         LogImu(il);
 		}
 		LastImu =IMU_Result.ReadingNum; 
 

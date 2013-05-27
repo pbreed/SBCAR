@@ -16,6 +16,7 @@ short mx;
 short my;
 short mz;
 WORD ReadingNum;
+DWORD odo;
 float fIhead;
 float fMhead;
 int GHeading;

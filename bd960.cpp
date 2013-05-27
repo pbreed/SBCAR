@@ -184,7 +184,9 @@ switch(cp[0])
 	case 8:
 		{rec8 * r8=(rec8*)cp;
 		TGPS_Result.GSpeed=  (int)(r8->hspeed*100.0); 
-		TGPS_Result.Heading= (int)(r8->head*180.0*1E5/M_PI); 
+		r8->head*=180.0/M_PI;
+		if(r8->head<0) r8->head+=360.0;
+		TGPS_Result.Heading= (int)((r8->head*1.0E5)); 
 		nr8++;
 		}
 		break;
