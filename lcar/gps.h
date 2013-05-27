@@ -19,7 +19,7 @@ int         VEL_E;          // cm/s  NED east velocity
 int         VEL_D;          // cm/s  NED down velocity
 int         Speed;          // cm/s  Speed (3-D)
 int         GSpeed;         // cm/s  Ground Speed (2-D)
-int         Heading;        // 1e-05 deg  Heading 2-D  zero to 359....
+int         Heading;        // 1e-05 deg  Heading 2-D
 DWORD        SAcc;           // cm/s  Speed Accuracy Estimate
 DWORD        CAcc;           // deg  Course / Heading Accuracy Estimate
 DWORD        Hacc;           // mm Horizontal Accuracy Estimate
@@ -46,29 +46,8 @@ DWORD        Hacc;           // mm Horizontal Accuracy Estimate
 }; 
 
 
-struct BD960_GPS
-{
-  double        lattitude;
-  double        longitude;
-  double        ht;
-  unsigned char r8flags;
-  float hspeed;
-  float head;
-  float vv;
-  float rms_error;
-  float sigma_east;
-  float sigma_north;
-  float covaren;
-  float sigma_up;
-  float semi_major;
-  float semi_minor;
-  float orientaion;
-  float variance;
-  unsigned char flag1;
-  unsigned char flag2;
-};
 
 
-extern volatile BD960_GPS bd960_Result;
+
 
 

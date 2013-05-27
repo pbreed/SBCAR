@@ -58,7 +58,6 @@ typedef enum tNames
 #define DSM2_TYPE (0x19)
 #define MAX_TYPE (0x1A)
 #define SGPS_TYPE  (0x1B)
-#define TGPS_TYPE (0x1C)
 
 OS_CRIT LogShiftCrit;
 
@@ -266,12 +265,6 @@ ShowBaseElement(id,(PBYTE)vp,(PBYTE)vp2,sizeof(el),tf32,name);
 
 }
 
-inline static void ShowElement(BYTE id,void * vp,void * vp2, double el,const char * name)
-{
-ShowBaseElement(id,(PBYTE)vp,(PBYTE)vp2,sizeof(el),td64,name);
-
-}
-
 /*
 inline static void ShowElement(BYTE id,void * vp,void * vp2, char * el,const char * name)
 {
@@ -464,7 +457,6 @@ void ShowImuRec(ImuRegisters & item)
 	LogElement(ReadingNum,"RN");
 	LogElement(fIhead,"IH");
 	LogElement(fMhead,"MH");
-	LogElement(fgIHead,"GI");
 	LogElement(GHeading,"GH");
 	LogElement(odo,"Od");
 }
@@ -541,32 +533,6 @@ while(*cp) PutEscapedByte(*cp++);
 PutRawByte(LOG_REC_END); 
 }
 
-void ShowTGps(BD960_GPS & item)
-{
-	LogStart(TGPS_TYPE,"TGPS");
-	LogElement(lattitude,"lat" );
-	LogElement(longitude,"lon" );
-	LogElement(ht       ,"ht" );
-	LogElement( r8flags ,"r8f" );
-	LogElement(hspeed    ,"hspd" );
-	LogElement(head      ,"head" );
-	LogElement(vv        ,"vv" );
-	LogElement(rms_error ,"rmser" );
-	LogElement(sigma_east ,"s_e");
-	LogElement(sigma_north,"s_n");
-	LogElement(covaren    ,"covar");
-	LogElement(sigma_up   ,"s_up");
-	LogElement(semi_major ,"s_majr");
-	LogElement(semi_minor ,"s_minr");
-	LogElement(orientaion ,"orient");
-	LogElement(variance   ,"var");
-	LogElement(flag1,"F1");
-	LogElement(flag2,"F2");
-
-}
-
-
-
 void DumpRecords()
 {
 BYTE item[16];
@@ -576,7 +542,6 @@ ShowImuRec((*((ImuRegisters * )& item))) ;
 ShowGps((*((GPS_READING  * )&item)));
 ShowRC((*((DSM2_READING *)&item)));
 ShowSmGps(((*(SMGPS_READING *)& item))); 
-ShowTGps(((*(BD960_GPS *)&item)));
 FileReporter::DumpList();
 LogConfig(SensorConfig);
 
@@ -609,9 +574,4 @@ void FileReporter::ShowList()
 
 }
 
-void LogTGps(volatile BD960_GPS & item)
-{
-	LogRawRecord(TGPS_TYPE,(const unsigned char *)&item,sizeof(item));
-
-}
 

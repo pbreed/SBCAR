@@ -11,8 +11,6 @@ void LogRC(volatile DSM2_READING  &item);
 void LogImu(volatile ImuRegisters  & item);
 void LogGps(volatile GPS_READING  & gps);
 void LogSmGps(volatile GPS_READING  & gps);
-void LogTGps(volatile BD960_GPS & gps);
-
 void LogMaxMin(short mgz,short mmx,short mmy,short ngz,short ngx,short ngy);
 
 extern volatile DWORD LogCount; 

@@ -64,10 +64,7 @@ extern IPADDR ipa_syslog_addr;
 
 #define STEER_CH (3)
 #define THROTTLE_CH (2)
-float fimHeading;
-float figHeading;
-short gzoff;
- 
+
 
 
 volatile DWORD UdpRx;
@@ -138,47 +135,6 @@ fhead+=err*adj_scale;
 }
 
 const float fGZHeadingScale_deg = (-3.8147E-05);  //(250 dps /(200 sps 32768 fs)
-
-volatile float Target_Heading;
-volatile float Offset_Heading;
-
-typedef struct {
-double deg_heading;
-double adj_heading;
-double err;
-double steer;
-}__attribute__( ( packed ) ) SteerLoopMsg;
-
-
-//AdjustVariable SteerGain("Steer P",0.033);
-//AdjustVariable SteerDGain("Steer D",-0.0001);
-
-const double SteerGain= (0.033);
-const double SteerDGain=-0.0001; 
-
-void DoSteer()
-{
-SteerLoopMsg slp;
-slp.deg_heading=figHeading; 
-slp.adj_heading=Target_Heading+Offset_Heading;
-slp.err=(slp.deg_heading-slp.adj_heading);
-if(slp.err>180.0) slp.err-=360;
-if(slp.err<-180.0) slp.err+=360.0;
-
-slp.steer=(slp.err*(double)SteerGain)+((double)SteerDGain*(double)IMU_Result.gz-gzoff);
-if(slp.steer>1.0) slp.steer=1.0;
-if(slp.steer<-1.0) slp.steer=-1.0;
-
-SetServo(STEER_CH,slp.steer*STEER_SIGN);
-//LogRecord(slp);
-
-}
-
-void HeadLimit(float & f)
-{
-  while (f>360.0) f-=360.0;
-  while (f<0.0) f+=360.0;
-}
 
 /*-------------------------------------------------------------------
  * UserMain
@@ -278,9 +234,8 @@ void UserMain(void *pd)
 
 	}
 	
-   gzoff=(GZSum/GZCnt);
-	fimHeading=fmh;
-	figHeading=fmh;
+	short gzoff=(GZSum/GZCnt);
+	float fIheading=fmh;
 
 
 	while(1)
@@ -290,39 +245,21 @@ void UserMain(void *pd)
 	if (LastGps!=GPS_Result.ReadingNum ) 
 	{
 		LastGps=GPS_Result.ReadingNum;
-	    LogSmGps(GPS_Result); 
-		LogTGps(bd960_Result);
+	    LogSmGps(GPS_Result);                                                                                                                                                                                                               
 	}
 	
 	if (LastRc !=DSM2_Result.ReadingNum)
 	{
-	 WORD w;
-	 float f;
-	  
-
-	  if(bMode)
-	  {
-	   if(nMode==0) Target_Heading=50.0;
-	   if(nMode==1) Target_Heading=320.0;
-	   if(nMode==2) Target_Heading=230.0;
-		  DoSteer();
-	  }
-	  else
-	  {
-	  w=DSM2_Result.val[1];
-	  f=DSM_Con(w);
-	  SetServo(STEER_CH,f*STEER_SIGN);
-
-	  }
-	   w=DSM2_Result.val[0];
+	  WORD w=DSM2_Result.val[1];
+	  float f=DSM_Con(w);
+	  SetServo(STEER_CH,f);
+	  w=DSM2_Result.val[0];
 	  f=DSM_Con(w);
 	  SetServo(THROTTLE_CH,f);
       LastRc =DSM2_Result.ReadingNum;
 	//  LogRC(DSM2_Result);
+
 	}
-
-
-
 	
 	if(LSecs!=Secs) 
 		{
@@ -346,13 +283,11 @@ void UserMain(void *pd)
 	{
 	   if(IMU_Result.gz<ngz) ngz=IMU_Result.gz;
 	   if(IMU_Result.gz>mgz) mgz=IMU_Result.gz;
-	   	float hd=(fGZHeadingScale_deg*(IMU_Result.gz-gzoff)); 
-	    fimHeading+=hd;
-		figHeading+=hd;
+	   
+	    fIheading+=(fGZHeadingScale_deg*(IMU_Result.gz-gzoff));
 
-
-		HeadLimit(figHeading);
-		HeadLimit(fimHeading);
+		if(fIheading > 180.0 ) fIheading-=360.0;
+		if(fIheading <-180.0 ) fIheading+=360.0;
 
 
 
@@ -379,35 +314,13 @@ void UserMain(void *pd)
 		il.ReadingNum=IMU_Result.ReadingNum;
 		OSUnlock();              
 		fmh=CalcMagHeading(IMU_Result.mx,IMU_Result.my);
-		CorrectHeading(fimHeading,fmh,0.005);//20 times per second correct in 10 seconds so 0.005
-		
-		if(GPS_Result.GSpeed >25) //0.25M/sec
-		{
-		 float fgh=((float)GPS_Result.Heading)*1.0E-5;
-
-		 if(GPS_Result.GSpeed >200) //12M/sec
-			 CorrectHeading(figHeading,fgh,0.05);
-			 else
-		 if(GPS_Result.GSpeed >100) //1M/sec
-		 	 CorrectHeading(figHeading,fgh,0.01);
-		 	 else
-			 CorrectHeading(figHeading,fgh,0.005);
-		}
-	    else
-			CorrectHeading(figHeading,fmh,0.005);//20 times per second correct in 10 seconds so 0.005
-
-
-		HeadLimit(figHeading);
-		HeadLimit(fimHeading);
-
-
-		il.fIhead=fimHeading;
+		CorrectHeading(fIheading,fmh,0.005);//20 times per second correct in 10 seconds so 0.005
+		il.fIhead=fIheading;
 	    il.fMhead=fmh;
-		il.fgIHead=figHeading;
 	    il.GHeading= GPS_Result.Heading;
 		il.odo=sim.timer[0].tcn;
 
-         //LogImu(il);
+         LogImu(il);
 		}
 		LastImu =IMU_Result.ReadingNum; 
 
