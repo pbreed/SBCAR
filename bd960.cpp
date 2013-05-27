@@ -129,8 +129,14 @@ WORD         ReadingNum;  //Serial number of GPS reading
 }; 
 #endif
 
+volatile DWORD nr1,nr2,nr3,nr8,nr12,nrq;
+BYTE nrn;
 
 const double LL_Scale = (1E7*180.0/M_PI); 
+
+
+double dlat,dlon;
+BYTE f1,f2;
 
 unsigned char * ParseRecord(unsigned char * cp, unsigned int & len)
 {
@@ -150,14 +156,21 @@ switch(cp[0])
 		TGPS_Result.week=r1->week; 
         //TGps_Result.flag1=r1->flag1; 
 		//TGps_Result.flag2=r1->flag2; 
+
+		f1=r1->flag1;
+		f2=r1->flag2;
+		nr1++;
 		}
 		break;
 	   
 	case 2:
 		{rec2 * r2=(rec2*)cp;
+		dlat=r2->lattitude;
+		dlon=r2->longitude;
 		TGPS_Result.LAT=(int)(r2->lattitude*LL_Scale);
 		TGPS_Result.LON=(int)(r2->longitude*LL_Scale);
 		TGPS_Result.HEIGHT=(int)(r2->ht*1000.0);
+		nr2++;
 		}
 		break;
 	case 3:
@@ -165,12 +178,14 @@ switch(cp[0])
 		TGPS_Result.ECEF_X=(int)(r3->ECEF_X*100.0);
 		TGPS_Result.ECEF_Y=(int)(r3->ECEF_Y*100.0);
   	    TGPS_Result.ECEF_Z=(int)(r3->ECEF_Z*100.0);
+		nr3++;
 		}
 	   
 	case 8:
 		{rec8 * r8=(rec8*)cp;
 		TGPS_Result.GSpeed=  (int)(r8->hspeed*100.0); 
 		TGPS_Result.Heading= (int)(r8->head*180.0*1E5/M_PI); 
+		nr8++;
 		}
 		break;
 
@@ -178,8 +193,14 @@ switch(cp[0])
 		{
 		rec12 * r12=(rec12*)cp;
 		 TGPS_Result.PAcc= (int)(r12->rms_error*100.0);
+		 TGPS_Result.Hacc=TGPS_Result.PAcc;
+		 nr12++;
 		}
 		break;
+default:
+	 nrn=cp[0];
+	 nrq++;
+
 	}
 cp+=cplen;
 return cp;
@@ -238,10 +259,10 @@ int UdpReceiveFunction(PEFRAME pf)
 	memcpy((void *)&GPS_Result,(void *)&TGPS_Result,sizeof(GPS_Result));
 	OSUnlock();                          
 	if(pDataSem)OSSemPost(pDataSem);
-
-
 	RxPkt++;
+	return 1;
 	}
+return 0;
 }
 
 
@@ -251,14 +272,30 @@ void GpsTask(void *)
 pUserUdpProcessFunction = UdpReceiveFunction;
 TickleDevice();  
 DWORD LastPkt=0;
+DWORD LastTickle=Secs;
+
 while(1)
 {
 OSTimeDly(10);
 if (LastPkt==RxPkt) 
 {
 	TickleDevice();
+	//writestring(LOG_UART,"TickleDevice\r\n");
+
 }
+else
+{
+// static char tbuf[256];
+// sprintf(tbuf,"Lat %d Lon %d nSats %d hacc=%lu  #%lu f1=%02X f2=%0x2 nr12: %lu\r\n",GPS_Result.LAT,GPS_Result.LON,GPS_Result.numSV,GPS_Result.Hacc,GPS_Result.ReadingNum,f1,f2, nr12);
+ //sprintf(tbuf,"nr1=%lu nr2=%lu nr3=%lu nr8=%lu nr12=%lu  nrq=%lu nrn=%02X\r\n",nr1,nr2,nr3,nr8,nr12,nrq,nrn);
+// writestring(LOG_UART,tbuf);
 LastPkt=RxPkt;
+if((LastTickle+10)<Secs)
+	{
+	 TickleDevice();
+	 LastTickle=Secs; 
+	}
+}
 }//While
 
 

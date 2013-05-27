@@ -89,7 +89,11 @@ void PutRawByte(BYTE b)
 
 //	iprintf("%c",b);
 //   iprintf("%02X",b);
+//if(bBlock) 
 	IRQ_writechar(LOG_UART,b); 	
+//else
+	//IRQ_WriteCharNoBlock(LOG_UART,b);
+
 	LogCount++;
 }
 
@@ -313,6 +317,7 @@ void InitLog()
 	bBlock=true;
 	DumpRecords(); 
 	bBlock=false;
+
 }			  
 
 

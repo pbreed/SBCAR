@@ -25,7 +25,7 @@
  *----------------------------------------------------------------------------*/
 #include "predef.h"
 #include <basictypes.h>         // Include for variable types
-#include <serialpoll.h>         // Use UART interrupts instead of polling
+#include <serialirq.h>         // Use UART interrupts instead of polling
 #include <constants.h>          // Include for constands like MAIN_PRIO
 #include <system.h>             // Include for system functions
 #include <netif.h>
@@ -176,10 +176,12 @@ void UserMain(void *pd)
 
 
 	InitLog();
+											 
 
 	LoadSensorConfig();
 	   // BcastSysLogPrintf("1");
 	
+
 	ImuInit(IMU_PRIO,&DataSem);
 	
 
@@ -197,7 +199,6 @@ void UserMain(void *pd)
 	SetServo(2,0);
 	SetServo(3,0);
 
-
 	WORD LastGps=GPS_Result.ReadingNum;
 	WORD LastRc =DSM2_Result.ReadingNum;
 	WORD LastImu =IMU_Result.ReadingNum;
@@ -213,7 +214,7 @@ void UserMain(void *pd)
 	DWORD ZeroTime=Secs+5;
 	long GZSum=0;
 	int  GZCnt=0;
-	float fmh;
+	float fmh=0.0;
 
 	while(ZeroTime > Secs)
 	{
@@ -265,6 +266,9 @@ void UserMain(void *pd)
 		// BcastSysLogPrintf("Tick %d Iat:%ld lon:%ld SAT:%d\r\n",Secs,GPS_Result.LAT,GPS_Result.LON,GPS_Result.numSV); 
 		//SysLogPrintf(ipa_syslog_addr,514,
 		 LogMaxMin(mgz,mmx,mmy,ngz,nmx,nmy);
+		 static char tbuf[256];
+		 siprintf(tbuf,"TCN=%ld\r\n",sim.timer[0].tcn);  
+		 writestring(LOG_UART,tbuf);
 		 mgz=0;
 		 mmx=0;
 		 mmy=0;

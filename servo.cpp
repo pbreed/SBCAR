@@ -156,6 +156,7 @@ servo_value[2]=SERVO_ZERO;
 servo_value[3]=SERVO_ZERO;
 
 
+#ifdef LITTLE_CAR
 sim.timer[0]. tmr=0x0022;  
 sim.timer[0]. txmr=0; 
 sim.timer[0]. ter=3;  
@@ -164,8 +165,20 @@ sim.timer[0]. tcr=0;
 sim.timer[0]. tcn=1; 
 
 sim.timer[0].tmr=0x003B;  
-
 SetIntc0((long)DTOUT0Isr,19,5,6);
+
+
+#elif BIG_CAR
+sim.timer[0]. tmr=0x0007;  
+sim.timer[0]. txmr=0; 
+sim.timer[0]. ter=0;  
+sim.timer[0]. trr=0; 
+sim.timer[0]. tcr=0; 
+sim.timer[0]. tcn=0; 
+sim.timer[0].tmr=0x0007;  
+
+
+#endif
 
 sim.timer[1].tmr=0x0022;  
 sim.timer[1].txmr=0; 
