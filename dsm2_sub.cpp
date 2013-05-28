@@ -26,7 +26,7 @@ volatile DWORD rcrx;
 
 volatile bool bMode;
 volatile int nMode;
-
+volatile bool bGear;
 
 unsigned char RCBuf[20];
 static int n;
@@ -54,6 +54,8 @@ if(n==16)
 	  else if(DSM2_Result.val[5]<600) nMode=1;
 	  else
 	  nMode=2;
+	  bGear=(DSM2_Result.val[4]>500);
+
 
 	  bMode=(DSM2_Result.val[6]>500);
 	  DSM2_Result.ReadingNum++;
