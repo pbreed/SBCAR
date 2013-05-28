@@ -14,6 +14,7 @@
 #include <sim.h>
 #include <cfinter.h>
 #include <iointernals.h>
+#include <tcp.h>
 #include "gps.h"
 #include "imu.h"
 #include "dsm2_sub.h"
@@ -22,7 +23,6 @@
 #include "filereporter.h" 
 #include "car.h"
 
-void IRQ_WriteCharNoBlock( int portnum, char c );
 
 volatile DWORD LogPagesWritten;
 																
@@ -69,7 +69,7 @@ OS_CRIT LogShiftCrit;
 #define LOG_REC_TICK (0xED)
 
 
-static BOOL bBlock;
+static volatile BOOL bBlock;
 
 
 volatile DWORD LogCount;
@@ -83,6 +83,129 @@ return b+'A'-10;
 }
 
 
+#define TCPBLEN (1024)
+
+struct log_to_TCP_Buffer
+{
+    WORD get_pos;
+    WORD ack_pos;
+    WORD put_pos;
+    BYTE CircBuffer[TCPBLEN];
+    WORD accum;
+	DWORD LastForceTick;
+
+    void PutBufChar(BYTE c)
+    {
+        CircBuffer[put_pos++] = c;
+        if ( put_pos >= TCPBLEN )
+            put_pos = 0;
+        if ( put_pos == ack_pos )
+        {
+            put_pos--;
+            if ( put_pos >= TCPBLEN )
+                put_pos = ( TCPBLEN - 1 );
+        }
+    }
+
+    void FreeBuf(int len)
+    {
+        while ( ( len ) && ( ack_pos != get_pos ) )
+        {
+            len--;
+            ack_pos++;
+            if ( ack_pos >= TCPBLEN )
+            {
+                ack_pos = 0;
+            }
+        }
+    }
+
+    int Empty()
+    {
+        return ( ack_pos == put_pos );
+    }
+    ;
+
+    void Flush()
+    {
+        get_pos = 0;
+        put_pos = 0;
+        ack_pos = 0;
+        accum = 0;
+    }
+    ;
+
+    /* Ciruclar buffer layout **************************************
+     ***********ack**********get********put*************** Mode 0
+     ***put********ack**********get*********************** Mode 1
+     *********get*******put********ack******************** Mode 2
+     */
+
+    WORD space()
+    {
+        WORD cpy_ack;
+        WORD cpy_put;
+
+        cpy_ack = ack_pos;
+        cpy_put = put_pos;
+
+        if ( cpy_ack > cpy_put ) /* mode 1,2 above */
+        {
+            return ( cpy_ack - cpy_put );
+        }
+
+        return ( ( cpy_ack + TCPBLEN ) - cpy_put );
+    }
+
+
+    void WriteBufferData(int tcp)
+    {
+
+        WORD cpy_get;
+        WORD cpy_put;
+        int force_send;
+
+        USER_ENTER_CRITICAL();
+        cpy_get = get_pos;
+        cpy_put = put_pos;
+        USER_EXIT_CRITICAL();
+
+        if ( cpy_put == cpy_get )
+            return;
+		force_send=1;
+
+
+        if ( cpy_get > cpy_put ) /* mode 1 above */
+        {
+            if ( write_for_callback( tcp, (const char *) ( CircBuffer + cpy_get ), ( TCPBLEN
+                    - cpy_get ), force_send ) )
+            {
+                cpy_get = 0;
+            }
+        }
+
+        if ( cpy_get < cpy_put ) /* Mode 0 or 2  above */
+        {
+            if ( write_for_callback( tcp, (const char *) ( CircBuffer + cpy_get ), ( cpy_put - cpy_get ), force_send ) )
+            {
+                cpy_get = cpy_put;
+            }
+
+        }
+        USER_ENTER_CRITICAL();
+        get_pos = cpy_get;
+        USER_EXIT_CRITICAL();
+    }
+};
+
+
+int lfd;
+int cfd;
+bool bSentBlob;
+
+						  
+log_to_TCP_Buffer  ltb;
+
 void PutRawByte(BYTE b)
 {
 
@@ -91,12 +214,38 @@ void PutRawByte(BYTE b)
 
 //	iprintf("%c",b);
 //   iprintf("%02X",b);
-//if(bBlock) 
-	IRQ_writechar(LOG_UART,b); 	
+if(cfd)
+{
+while(((bBlock)  && (ltb.space()==0 ))) OSTimeDly(2);
+	
+	ltb.PutBufChar(b); 
+	if((LogCount & 63)==63)ltb.WriteBufferData(cfd);
+
+}
+	//IRQ_writechar(LOG_UART,b); 	
 //else
 	//IRQ_WriteCharNoBlock(LOG_UART,b);
 
 	LogCount++;
+}
+
+
+
+TCPCallbacks mycallback;
+
+WORD WinSiz(int socket) {return 1;};
+void ReadDataCB(int socket, PBYTE data, int len) {};
+void WriteFreeCB(int socket, const char * data_sent, int len){ ltb.FreeBuf(len);};
+void CloseErrCB(int socket) {close(cfd); cfd=0;};
+
+
+TCPCallbacks *  MyAccept(int listen_socket, int new_socket)
+{
+ if(cfd) close(cfd);
+ bSentBlob=false;
+ cfd=new_socket;
+ ltb.Flush();
+ return &mycallback;
 }
 
 
@@ -320,11 +469,20 @@ void InitLog()
 	IoExpands[1].write = null_stdio_write;
 	IoExpands[1].close = null_stdio_close;
 
+	mycallback.rxwindow_size=WinSiz;
+	mycallback.read_data_callback=ReadDataCB;
+	mycallback.write_free_callback=WriteFreeCB;
+	mycallback.closed_on_error_callback=CloseErrCB;
+
+
+	lfd=listen_w_callback(0,1000 ,MyAccept);
+
+
 	SimpleUart(LOG_UART,115200);
 	writestring(LOG_UART,"Starting log\r\n");
-	bBlock=true;
-	DumpRecords(); 
-	bBlock=false;
+	//bBlock=true;
+	//DumpRecords(); 
+	//bBlock=false;
 
 }			  
 
@@ -333,7 +491,6 @@ void InitLog()
 
 #define LogStart(id ,name) BYTE tid=id;   StartItemIntro(id,sizeof(item),name); 
 #define LogElement(x,y) ShowElement(tid,&item,&item.x,item.x,y)
-
 
 
 
@@ -632,6 +789,18 @@ void FileReporter::ShowList()
 void LogRecord(SteerLoopMsg & item)
 {
    LogRawRecord(STEER_TYPE,(const unsigned char *)&item,sizeof(item));
+}
+
+
+void LogServiceTask()
+{
+ if((cfd) && (!bSentBlob))
+ {
+  bSentBlob=true;
+  bBlock=true;
+  DumpRecords();
+  bBlock=false;
+ }
 }
 
 

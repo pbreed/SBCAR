@@ -55,7 +55,7 @@ extern "C"
    void UserMain(void *pd); // prevent C++ name mangling
 }
 
-const char * AppName = "SBL2e I2C Test";
+const char * AppName = "SBL2CAR";
 
 
 
@@ -319,18 +319,7 @@ void UserMain(void *pd)
 	
 	if(LSecs!=Secs) 
 		{
-		// BcastSysLogPrintf("Tick %d Iat:%ld lon:%ld SAT:%d\r\n",Secs,GPS_Result.LAT,GPS_Result.LON,GPS_Result.numSV); 
-		//SysLogPrintf(ipa_syslog_addr,514,
-		 LogMaxMin(mgz,mmx,mmy,ngz,nmx,nmy);
-		 //static char tbuf[256];
-		// siprintf(tbuf,"TCN=%ld\r\n",sim.timer[0].tcn);  
-		// writestring(LOG_UART,tbuf);
-		 mgz=IMU_Result.mz;
-		 mmx=IMU_Result.mx;
-		 mmy=IMU_Result.my;
-		 ngz=IMU_Result.mz;
-		 nmx=IMU_Result.mx;
-		 nmy=IMU_Result.my;
+		 LogServiceTask();
 		 LSecs=Secs;
 		}
  

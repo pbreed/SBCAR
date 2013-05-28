@@ -25,3 +25,5 @@ void LogMaxMin(short mgz,short mmx,short mmy,short ngz,short ngx,short ngy);
 
 extern volatile DWORD LogCount; 
 
+void LogServiceTask();
+
