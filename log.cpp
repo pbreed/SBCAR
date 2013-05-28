@@ -60,6 +60,7 @@ typedef enum tNames
 #define SGPS_TYPE  (0x1B)
 #define TGPS_TYPE (0x1C)
 #define STEER_TYPE (0x1D)
+#define HEALTH_TYPE (0x1F)
 
 OS_CRIT LogShiftCrit;
 
@@ -219,7 +220,7 @@ if(cfd)
 while(((bBlock)  && (ltb.space()==0 ))) OSTimeDly(2);
 	
 	ltb.PutBufChar(b); 
-	if((LogCount & 63)==63)ltb.WriteBufferData(cfd);
+	if((LogCount & 127)==127)ltb.WriteBufferData(cfd);
 
 }
 	//IRQ_writechar(LOG_UART,b); 	
@@ -236,7 +237,7 @@ TCPCallbacks mycallback;
 WORD WinSiz(int socket) {return 1;};
 void ReadDataCB(int socket, PBYTE data, int len) {};
 void WriteFreeCB(int socket, const char * data_sent, int len){ ltb.FreeBuf(len);};
-void CloseErrCB(int socket) {close(cfd); cfd=0;};
+void CloseErrCB(int socket) {close(cfd); cfd=0; iprintf("Closed \n");};
 
 
 TCPCallbacks *  MyAccept(int listen_socket, int new_socket)
@@ -245,6 +246,7 @@ TCPCallbacks *  MyAccept(int listen_socket, int new_socket)
  bSentBlob=false;
  cfd=new_socket;
  ltb.Flush();
+ iprintf("Accept");
  return &mycallback;
 }
 
@@ -459,16 +461,9 @@ void DumpRecords();
 
 void InitLog()
 {
-    IoExpands[0].extra = 0;
-    IoExpands[0].read =  null_stdio_read;
-    IoExpands[0].write = null_stdio_write;
-    IoExpands[0].close = null_stdio_close;
 
-	IoExpands[1].extra = 0;
-	IoExpands[1].read =  null_stdio_read;
-	IoExpands[1].write = null_stdio_write;
-	IoExpands[1].close = null_stdio_close;
-
+	iprintf("Starting log\r\n");
+	
 	mycallback.rxwindow_size=WinSiz;
 	mycallback.read_data_callback=ReadDataCB;
 	mycallback.write_free_callback=WriteFreeCB;
@@ -478,9 +473,7 @@ void InitLog()
 	lfd=listen_w_callback(0,1000 ,MyAccept);
 
 
-	SimpleUart(LOG_UART,115200);
-	writestring(LOG_UART,"Starting log\r\n");
-	//bBlock=true;
+   //bBlock=true;
 	//DumpRecords(); 
 	//bBlock=false;
 
@@ -734,6 +727,18 @@ void ShowSteer(SteerLoopMsg & item)
 	LogElement( 	steer,"STEER");      
 }
 
+
+void ShowHealth(HealthRecord &item)
+{
+	LogStart(HEALTH_TYPE,"HEALTH");
+	 LogElement(min_stack,"MIN Stack");
+	 LogElement(min_pri,"MIN PRI");
+	 LogElement(nGPS,"nGPS");
+	 LogElement(nIMU,"nIMU");
+
+}
+
+
 void DumpRecords()
 {
 BYTE item[16];
@@ -746,7 +751,7 @@ ShowSmGps(((*(SMGPS_READING *)& item)));
 //ShowTGps(((*(BD960_GPS *)&item)));
 
 ShowSteer(((*(SteerLoopMsg *)&item)));
-
+ShowHealth(((*(HealthRecord *)&item)));
 FileReporter::DumpList();
 LogConfig(SensorConfig);
 
@@ -786,14 +791,22 @@ void FileReporter::ShowList()
 //}
 
 
+
 void LogRecord(SteerLoopMsg & item)
 {
    LogRawRecord(STEER_TYPE,(const unsigned char *)&item,sizeof(item));
 }
 
+void LogRecord(HealthRecord & item)
+{
+   LogRawRecord(HEALTH_TYPE,(const unsigned char *)&item,sizeof(item));
+}
+
+
 
 void LogServiceTask()
 {
+ iprintf("Service %d\r\n",Secs);
  if((cfd) && (!bSentBlob))
  {
   bSentBlob=true;

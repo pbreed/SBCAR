@@ -152,7 +152,7 @@ string GetNowFilename()
     tstruct = *localtime(&now);
     // Visit http://www.cplusplus.com/reference/clibrary/ctime/strftime/
     // for more information about date/time format
-	sprintf(buf,"LOG%02d-%02d-%04d-%02d:%02d.net",tstruct.tm_mon,tstruct.tm_mday,tstruct.tm_year+1900,tstruct.tm_hour,tstruct.tm_min);
+	sprintf(buf,"LOG%02d-%02d-%04d-%02d%02d%02d.dat",tstruct.tm_mon,tstruct.tm_mday,tstruct.tm_year+1900,tstruct.tm_hour,tstruct.tm_min,tstruct.tm_sec);
 	string s=buf;
 	return s;
 }
@@ -192,8 +192,12 @@ printf("Found NB\n");
 	saddro.sin_family=AF_INET;
 	saddro.sin_port=htons(1000);
 	saddro.sin_addr.s_addr =htonl(addr);
-	
-	FILE *fout    = fopen(GetNowFilename().c_str() , "wb" );  
+	string fname=GetNowFilename();
+	printf("Opening file %s",fname.c_str());
+	FILE *fout    = fopen(fname.c_str() , "wb" );  
+	if(fout==NULL) printf(" failed\n");
+	else printf(" Ok\n");
+
 
 	nRet = connect(mySocket,(LPSOCKADDR)&saddro,sizeof(struct sockaddr));	
 
@@ -209,9 +213,11 @@ printf("Found NB\n");
 	nRet=setsockopt(mySocket,SOL_SOCKET,SO_RCVBUF,(const char *)&sv, sizeof(sv));
 	printf("Connected! X to exit\n");
 	char rxc=' ';
-	while(rxc!='X')
+	bool bError=false;
+
+	while((rxc!='X') && (!bError))
 	{
-    while(_kbhit())
+    while(!_kbhit())
 		{
 		fd_set readfd;
 		FD_ZERO(&readfd);
@@ -219,23 +225,34 @@ printf("Found NB\n");
 		timeval tout;
 		tout.tv_sec=2;
 		tout.tv_usec=0;
+		//printf("wait for select..\n");
 		if(select (1,&readfd,NULL,NULL,&tout)>0)
-			{static char retbuffer[10000];
+			{
+			 static char retbuffer[10000];
 			 nRet = recv(mySocket,retbuffer,10000,0);  
 			 if(nRet>0)
 				{
 				 fwrite(retbuffer,1,nRet,fout);
-				 printf("wrote %d\n",nRet);
+				 printf("wrote %d      \r",nRet);
 				}
+			 else
+				{
+				 printf("Closed on error\n");
+				 bError=true;
+				 break;
+			    }
 			}
-
+		 else
+		 printf("Select timed out\n");
 
 
 		}
+	printf("KBHit...");
 	rxc=_getch();
 	}
 	fclose(fout);
 	closesocket(mySocket);
+	printf("Cleaned up...");
 	}
 
 }

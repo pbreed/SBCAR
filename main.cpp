@@ -34,6 +34,7 @@
 #include <autoupdate.h>
 #include <i2cmaster.h>
 #include <sim.h>
+#include <smarttrap.h>
 //#include <syslog.h>
 #include <taskmon.h>
 #include <math.h>
@@ -48,7 +49,7 @@
 #include "filereporter.h"
 #include "prio.h"
 #include "car.h"
-
+#include "checkstack.h"
 
 extern "C"
 {
@@ -167,6 +168,36 @@ LogRecord(slp);
 
 }
 
+void HealthCheck()
+{
+ static int task_index;
+ static DWORD min_stack;
+ static int min_pri;
+ static WORD lastGps;
+ static WORD lastImu;
+ int pri;
+ HealthRecord hr;
+
+
+
+
+ DWORD dw=CheckAStack(task_index,pri);
+ // iprintf("Task %d:[%d] has %d\n",task_index,pri,dw);
+ if((dw<min_stack) || (min_pri==0))
+	{
+	 min_pri=pri;
+	 min_stack=dw;
+	}
+ hr.min_pri=min_pri;
+ hr.min_stack=min_stack;
+ hr.nGPS=GPS_Result.ReadingNum-lastGps;
+ hr.nIMU=IMU_Result.ReadingNum-lastImu;
+ lastGps=GPS_Result.ReadingNum;
+ lastImu =IMU_Result.ReadingNum;
+ LogRecord(hr);
+}
+
+
 void HeadLimit(float & f)
 {
   while (f>360.0) f-=360.0;
@@ -178,11 +209,7 @@ void HeadLimit(float & f)
  *-----------------------------------------------------------------*/
 void UserMain(void *pd)
 {
-	SimpleUart(0,115200);
-	assign_stdio(0);
-
-	iprintf("Before init stack\r\n");
-    
+	    
 	InitializeStack();
 
     {
@@ -196,39 +223,43 @@ void UserMain(void *pd)
         }
     }
 
+	SimpleUart(LOG_UART,115200);
+	assign_stdio(LOG_UART);
+
+
     EnableAutoUpdate();
 	EnableTaskMonitor(); 
-
+	EnableSmartTraps(); 
 
     OSChangePrio( MAIN_PRIO ); // set standard UserMain task priority
 
-	//BcastSysLogPrintf("Application built on %s on %s\r\nWait...", __TIME__, __DATE__ );
-
 	pUserUdpProcessFunction=MyUDPProcessFunction;
 
-//	UdpCheck();
-	
-   
+   	iprintf("Data sem..");
+
 	OSSemInit(&DataSem,0);
 
-
-	   									 
-
+	iprintf("Load sensor..");
 	LoadSensorConfig();
-	   // BcastSysLogPrintf("1");
 	
+
 	InitLog();
+
+	iprintf("Init imu..");
 
 	ImuInit(IMU_PRIO,&DataSem);
 	
+	iprintf("Init DSM2");
 
 	InitIDSM2SubSystem(RC_PRIO,&DataSem); 
 
-	
+	iprintf("Init GPS");
 	InitGpsSubSystem(GPS_PRIO,&DataSem);
 
 	
+	iprintf("Init servos");
 	InitServos();
+
 
 
     SetServo(0,0);
@@ -252,6 +283,8 @@ void UserMain(void *pd)
 	long GZSum=0;
 	int  GZCnt=0;
 	float fmh=0.0;
+	
+	iprintf("Starting zero..\r\n");
 
 	while(ZeroTime > Secs)
 	{
@@ -268,8 +301,9 @@ void UserMain(void *pd)
 
             }
 
-
+	 
 	}
+	iprintf("Zero done\r\n");
 	
    gzoff=(GZSum/GZCnt);
 	fimHeading=fmh;
@@ -321,6 +355,8 @@ void UserMain(void *pd)
 		{
 		 LogServiceTask();
 		 LSecs=Secs;
+		 HealthCheck();
+		    //OSDumpTCBStacks(); 
 		}
  
 

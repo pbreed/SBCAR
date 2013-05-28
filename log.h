@@ -11,6 +11,13 @@ double steer;
 }__attribute__( ( packed ) ) SteerLoopMsg;
 
 
+typedef struct {
+DWORD min_stack;
+int min_pri;
+WORD nGPS;
+WORD nIMU;
+}HealthRecord;
+
 
 struct sensor_saved_config ; //forward
 
@@ -23,6 +30,7 @@ void LogRecord(SteerLoopMsg & item);
 
 void LogMaxMin(short mgz,short mmx,short mmy,short ngz,short ngx,short ngy);
 
+void LogRecord(HealthRecord & itme);
 extern volatile DWORD LogCount; 
 
 void LogServiceTask();
