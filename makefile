@@ -22,7 +22,7 @@ NAME = SBEXACA
 PLATFORM = SBL2EXA
 
 CXXSRCS = \
-	main.cpp imu.cpp servo.cpp dsm2_sub.cpp sensor_config.cpp pitr_sem.cpp log.cpp gps.cpp checkstack.cpp
+	main.cpp imu.cpp servo.cpp dsm2_sub.cpp sensor_config.cpp pitr_sem.cpp log.cpp gps.cpp checkstack.cpp wp.cpp ned.cpp
 
 CSRCS = \
 

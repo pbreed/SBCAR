@@ -50,6 +50,12 @@
 #include "prio.h"
 #include "car.h"
 #include "checkstack.h"
+#include "nav.h"
+
+const float dSteerGain=  -0.033;
+const float dSteerDGain=   -0.01; 
+const double OffsetHeadingGain= -2.0;
+
 
 extern "C"
 {
@@ -147,9 +153,6 @@ volatile float Offset_Heading;
 //AdjustVariable SteerGain("Steer P",0.033);
 //AdjustVariable SteerDGain("Steer D",-0.0001);
 
-const float dSteerGain=  -0.033;
-const float dSteerDGain=   -0.01; 
-
 float egain;
 
 void DoSteer()
@@ -221,6 +224,55 @@ void HeadLimit(float & f)
   while (f>360.0) f-=360.0;
   while (f<0.0) f+=360.0;
 }
+
+extern long WP[][2];
+
+NavSegment nav_s;
+int wp_num;
+
+void DoStartNav()
+{
+	SetupSegment(GPS_Result.LAT,GPS_Result.LON, WP[0][0],WP[0][1], nav_s);
+	Target_Heading=(nav_s.bearing*180.0/M_PI)+DECLINATION;
+	Offset_Heading=0;
+	wp_num=0;
+
+
+}
+
+
+
+void DoNav()
+{
+static NavState result;
+GetState(GPS_Result.LAT,GPS_Result.LON,nav_s,result);
+
+if(result.bPassed)
+{
+ wp_num++;
+ 
+ if(WP[wp_num][0]!=0)
+ {
+ SetupSegment(WP[wp_num-1][0],WP[wp_num-1][1], WP[wp_num][0],WP[wp_num][1], nav_s);
+ Target_Heading=(nav_s.bearing*180.0/M_PI)+DECLINATION;
+ Offset_Heading=0;
+ }
+ else
+ {//Loop over and over
+	 SetupSegment(WP[wp_num-1][0],WP[wp_num-1][1], WP[0][0],WP[0][1], nav_s);
+	 wp_num=0;
+ }
+
+}
+else
+Offset_Heading=(double)OffsetHeadingGain*result.cross;
+
+LogRecord(result);
+
+}
+
+
+
 
 /*-------------------------------------------------------------------
  * UserMain
@@ -329,6 +381,8 @@ void UserMain(void *pd)
 
 	static float ftThrottle;
 	static float ftSteer;
+
+	bool LastbMode=bMode;
 	while(1)
 	 {
 
@@ -343,18 +397,11 @@ void UserMain(void *pd)
 
 	if (LastRc !=DSM2_Result.ReadingNum)
 	{
-      if(bMode)
-	  {
-	   Offset_Heading=45*DSM_Con(DSM2_Result.val[3]);
-	   egain=DSM_Con(DSM2_Result.val[2]);
-	   if(nMode==0) Target_Heading=80.0;
-	   if(nMode==1) Target_Heading=340.0;
-	   if(nMode==2) Target_Heading=260.0;
-	  }
-	  else
-	  {
+
+      if((bMode) && (bMode!=LastbMode)) DoStartNav();
+	  LastbMode=bMode;
+
 	  ftSteer=DSM_Con(DSM2_Result.val[1]);
-	  }
 	  ftThrottle=DSM_Con(DSM2_Result.val[0]);
       LastRc =DSM2_Result.ReadingNum;
 	  LogRC(DSM2_Result);
@@ -373,9 +420,7 @@ void UserMain(void *pd)
 		SetServo(STEER_CH,ftSteer*STEER_SIGN);
 		else
 		DoSteer();
-
 		ServoUsed[STEER_CH]=false;
-
 	}
 
 
@@ -429,7 +474,7 @@ void UserMain(void *pd)
 		
 		if(GPS_Result.GSpeed >25) //0.25M/sec
 		{
-		 float fgh=((float)GPS_Result.Heading)*1.0E-5;
+		 float fgh=((float)GPS_Result.Heading)*1.0E-5+DECLINATION;
 
 		 if(GPS_Result.GSpeed >200) //12M/sec
 			 CorrectHeading(figHeading,fgh,0.05);
