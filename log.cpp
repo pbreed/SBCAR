@@ -23,7 +23,7 @@
 #include "filereporter.h" 
 #include "car.h"
 #include "nav.h"
-
+#include "mytrap.h"
 
 volatile DWORD LogPagesWritten;
 																
@@ -63,6 +63,7 @@ typedef enum tNames
 #define STEER_TYPE (0x1D)
 #define HEALTH_TYPE (0x1F)
 #define NAV_TYPE (0x20)
+#define TRAP_TYPE (0x21)
 
 OS_CRIT LogShiftCrit;
 
@@ -752,6 +753,25 @@ void ShowNavState(NavState &item)
 }
 
 
+void ShowTrap(Captured_Trap &item)
+{
+	LogStart(TRAP_TYPE,"TRAP");
+		LogElement(vec,"VEC");
+		LogElement(pc,"PC");
+		LogElement(a7,"a7");
+		LogElement(prio,"VEC");
+}
+
+
+void LogTrap()
+{
+LogRawRecord(TRAP_TYPE,(const unsigned char *)&cap_trap,sizeof(cap_trap)); 
+cap_trap.vec=0;			   
+cap_trap.pc=0;
+cap_trap.a7=0;
+cap_trap.prio=0;
+}
+
 void DumpRecords()
 {
 BYTE item[16];
@@ -766,9 +786,10 @@ ShowSmGps(((*(SMGPS_READING *)& item)));
 ShowSteer(((*(SteerLoopMsg *)&item)));
 ShowHealth(((*(HealthRecord *)&item)));
 ShowNavState(((*(NavState *)&item)));
+ShowTrap(((* (Captured_Trap *)&item)));
 FileReporter::DumpList();
 LogConfig(SensorConfig);
-
+LogTrap();
 }
 
 
@@ -837,4 +858,5 @@ void LogRecord(NavState & item)
 	LogRawRecord(NAV_TYPE,(const unsigned char *)&item,sizeof(item));
 
 }
+
 

@@ -52,8 +52,9 @@
 #include "checkstack.h"
 #include "nav.h"
 
-const float dSteerGain=  -0.033;
-const float dSteerDGain=   -0.01; 
+const float SteerGain=  -0.033;
+const float SteerDGain=   -0.02;
+const float SteerIGain = -0.0003;
 const double OffsetHeadingGain= -5.0;
 
 
@@ -149,6 +150,7 @@ const float fGZHeadingScale_deg = (-3.8147E-05);  //(250 dps /(200 sps 32768 fs)
 volatile float Target_Heading;
 volatile float Offset_Heading;
 
+volatile float ISteerErr;
 
 //AdjustVariable SteerGain("Steer P",0.033);
 //AdjustVariable SteerDGain("Steer D",-0.0001);
@@ -162,9 +164,8 @@ static float last_hdg;
 SteerLoopMsg slp;
 
 //Set up gains
-if(bGear) slp.dgain=dSteerDGain*egain;
-else slp.dgain=0;
-slp.sgain=dSteerGain;
+slp.dgain=SteerDGain;
+slp.sgain=SteerGain;
 
 float delta=(figHeading-last_hdg);	  //Suppose T=90  C=80 L=70 delta =10.0
 if(delta<-180.0) delta+=360.0;
@@ -179,7 +180,9 @@ slp.err=(slp.deg_heading-slp.adj_heading);	 //80-90 =-10
 if(slp.err >  180.0) slp.err-=360.0;
 if(slp.err < -180.0) slp.err+=360.0;
 
-slp.steer=(slp.err*slp.sgain)+slp.dgain*delta; //sg*-10 + dg*10 =0
+if((slp.err<10.0) && (slp.err>-10)) ISteerErr+=slp.err;
+
+slp.steer=(slp.err*slp.sgain)+(slp.dgain*delta)+(ISteerErr*SteerIGain); //sg*-10 + dg*10 =0
 
 if(slp.steer>1.0) slp.steer=1.0;
 if(slp.steer<-1.0) slp.steer=-1.0;
