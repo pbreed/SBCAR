@@ -22,6 +22,7 @@
 #include "sensor_config.h"
 #include "filereporter.h" 
 #include "car.h"
+#include "nav.h"
 
 
 volatile DWORD LogPagesWritten;
@@ -61,6 +62,7 @@ typedef enum tNames
 #define TGPS_TYPE (0x1C)
 #define STEER_TYPE (0x1D)
 #define HEALTH_TYPE (0x1F)
+#define NAV_TYPE (0x20)
 
 OS_CRIT LogShiftCrit;
 
@@ -740,12 +742,21 @@ void ShowHealth(HealthRecord &item)
 
 }
 
+void ShowNavState(NavState &item)
+{
+	LogStart(NAV_TYPE,"NAV");
+	LogElement(dist,"Dist");
+	LogElement(bearing,"Bear");
+	LogElement(cross,"Cross");
+	LogElement(bPassed,"pass");
+}
+
 
 void DumpRecords()
 {
 BYTE item[16];
 ShowConfig((*((sensor_saved_config* )&item))) ;
-ShowMMRec((*((mmax  *)& item)));
+//ShowMMRec((*((mmax  *)& item)));
 ShowImuRec((*((ImuRegisters * )& item))) ;
 ShowGps((*((GPS_READING  * )&item)));
 ShowRC((*((DSM2_READING *)&item)));
@@ -754,6 +765,7 @@ ShowSmGps(((*(SMGPS_READING *)& item)));
 
 ShowSteer(((*(SteerLoopMsg *)&item)));
 ShowHealth(((*(HealthRecord *)&item)));
+ShowNavState(((*(NavState *)&item)));
 FileReporter::DumpList();
 LogConfig(SensorConfig);
 
@@ -818,4 +830,11 @@ void LogServiceTask()
  }
 }
 
+
+
+void LogRecord(NavState & item)
+{
+	LogRawRecord(NAV_TYPE,(const unsigned char *)&item,sizeof(item));
+
+}
 
