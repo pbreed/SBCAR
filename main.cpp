@@ -54,7 +54,7 @@
 
 const float dSteerGain=  -0.033;
 const float dSteerDGain=   -0.01; 
-const double OffsetHeadingGain= -2.0;
+const double OffsetHeadingGain= -5.0;
 
 
 extern "C"
@@ -260,6 +260,8 @@ if(result.bPassed)
  else
  {//Loop over and over
 	 SetupSegment(WP[wp_num-1][0],WP[wp_num-1][1], WP[0][0],WP[0][1], nav_s);
+	 Target_Heading=(nav_s.bearing*180.0/M_PI)+DECLINATION;
+	 Offset_Heading=0;
 	 wp_num=0;
  }
 
@@ -391,6 +393,7 @@ void UserMain(void *pd)
 	{
 		LastGps=GPS_Result.ReadingNum;
 	    LogSmGps(GPS_Result); 
+		if(bMode) DoNav();
 		//LogTGps(bd960_Result);
 	}
 	
