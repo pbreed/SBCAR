@@ -4,10 +4,12 @@ void InitLog();
 void LogMessage(const char * msg);
 
 typedef struct {
-double deg_heading;
-double adj_heading;
-double err;
-double steer;
+float deg_heading;
+float adj_heading;
+float err;
+float steer;
+float dgain;
+float sgain;
 }__attribute__( ( packed ) ) SteerLoopMsg;
 
 

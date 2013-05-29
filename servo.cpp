@@ -38,6 +38,7 @@ volatile int tog2;
 volatile int tog3;
 volatile DWORD icnt[4];
 
+volatile bool ServoUsed[4]; 
 
 INTERRUPT(DTOUT0Isr,0x2700)
 {
@@ -46,7 +47,10 @@ sim.timer[0].ter=3;
 if(!tog0) 
 	sim.timer[0]. trr=(1000000)-servo_value[0];
 else
+{
 	sim.timer[0]. trr=servo_value[0]; 
+	ServoUsed[0]=true;
+}
 
 tog0=tog0^1;
 icnt[0]++;
@@ -62,10 +66,12 @@ sim.timer[1].ter=3;
 if(!tog1) 
 	sim.timer[1]. trr=(1000000)-servo_value[1];
 else
-	sim.timer[1]. trr=servo_value[1]; 
-
+{	sim.timer[1]. trr=servo_value[1]; 
+	ServoUsed[1]=true;
+}
 tog1=tog1^1;
 icnt[1]++;
+
 }
 
 INTERRUPT(DTOUT2Isr,0x2700)
@@ -75,8 +81,10 @@ sim.timer[2].ter=3;
 if(!tog2) 
 	sim.timer[2]. trr=(1000000)-servo_value[2];
 else
+{
 	sim.timer[2]. trr=servo_value[2]; 
-
+	ServoUsed[2]=true;
+}
 tog2=tog2^1;
 icnt[2]++;
 }
@@ -89,7 +97,10 @@ sim.timer[3].ter=3;
 if(!tog3) 
 	sim.timer[3]. trr=(1000000)-servo_value[3];
 else
+{
 	sim.timer[3]. trr=servo_value[3]; 
+		ServoUsed[3]=true;
+}
 
 tog3=tog3^1;
 icnt[3]++;

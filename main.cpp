@@ -147,25 +147,43 @@ volatile float Offset_Heading;
 //AdjustVariable SteerGain("Steer P",0.033);
 //AdjustVariable SteerDGain("Steer D",-0.0001);
 
-const double SteerGain= (0.033);
-const double SteerDGain=-0.0001; 
+const float dSteerGain=  -0.033;
+const float dSteerDGain=   -0.01; 
+
+float egain;
 
 void DoSteer()
 {
-SteerLoopMsg slp;
-slp.deg_heading=figHeading; 
-slp.adj_heading=Target_Heading+Offset_Heading;
-slp.err=(slp.deg_heading-slp.adj_heading);
-if(slp.err>180.0) slp.err-=360;
-if(slp.err<-180.0) slp.err+=360.0;
+static float last_hdg;
 
-slp.steer=(slp.err*(double)SteerGain)+((double)SteerDGain*(double)IMU_Result.gz-gzoff);
+SteerLoopMsg slp;
+
+//Set up gains
+if(bGear) slp.dgain=dSteerDGain*egain;
+else slp.dgain=0;
+slp.sgain=dSteerGain;
+
+float delta=(figHeading-last_hdg);	  //Suppose T=90  C=80 L=70 delta =10.0
+if(delta<-180.0) delta+=360.0;
+if(delta>180.0) delta-=360.0;
+
+
+slp.deg_heading=figHeading; 
+slp.adj_heading=Target_Heading+Offset_Heading; //90
+
+slp.err=(slp.deg_heading-slp.adj_heading);	 //80-90 =-10
+
+if(slp.err >  180.0) slp.err-=360.0;
+if(slp.err < -180.0) slp.err+=360.0;
+
+slp.steer=(slp.err*slp.sgain)+slp.dgain*delta; //sg*-10 + dg*10 =0
+
 if(slp.steer>1.0) slp.steer=1.0;
 if(slp.steer<-1.0) slp.steer=-1.0;
 
 SetServo(STEER_CH,slp.steer*STEER_SIGN);
 LogRecord(slp);
-
+last_hdg=figHeading;
 }
 
 void HealthCheck()
@@ -309,7 +327,8 @@ void UserMain(void *pd)
 	fimHeading=fmh;
 	figHeading=fmh;
 
-
+	static float ftThrottle;
+	static float ftSteer;
 	while(1)
 	 {
 
@@ -321,36 +340,45 @@ void UserMain(void *pd)
 		//LogTGps(bd960_Result);
 	}
 	
+
 	if (LastRc !=DSM2_Result.ReadingNum)
 	{
-	 WORD w;
-	 float f;
-	  
-
-	  if(bMode)
+      if(bMode)
 	  {
-	   if(nMode==0) Target_Heading=50.0;
-	   if(nMode==1) Target_Heading=320.0;
-	   if(nMode==2) Target_Heading=230.0;
-		  DoSteer();
+	   Offset_Heading=45*DSM_Con(DSM2_Result.val[3]);
+	   egain=DSM_Con(DSM2_Result.val[2]);
+	   if(nMode==0) Target_Heading=80.0;
+	   if(nMode==1) Target_Heading=340.0;
+	   if(nMode==2) Target_Heading=260.0;
 	  }
 	  else
 	  {
-	  w=DSM2_Result.val[1];
-	  f=DSM_Con(w);
-	  SetServo(STEER_CH,f*STEER_SIGN);
-
+	  ftSteer=DSM_Con(DSM2_Result.val[1]);
 	  }
-	   w=DSM2_Result.val[0];
-	  f=DSM_Con(w);
-	  SetServo(THROTTLE_CH,f);
+	  ftThrottle=DSM_Con(DSM2_Result.val[0]);
       LastRc =DSM2_Result.ReadingNum;
-	//  LogRC(DSM2_Result);
+	  LogRC(DSM2_Result);
+	}
+
+	if(	ServoUsed[THROTTLE_CH])
+	{
+		SetServo(THROTTLE_CH,ftThrottle);
+		ServoUsed[THROTTLE_CH]=false;
+
+	}
+
+    if(	ServoUsed[STEER_CH])
+	{
+		if(!bMode)
+		SetServo(STEER_CH,ftSteer*STEER_SIGN);
+		else
+		DoSteer();
+
+		ServoUsed[STEER_CH]=false;
+
 	}
 
 
-
-	
 	if(LSecs!=Secs) 
 		{
 		 LogServiceTask();

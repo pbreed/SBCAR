@@ -725,6 +725,8 @@ void ShowSteer(SteerLoopMsg & item)
 	LogElement( 	adj_heading,"THD");
 	LogElement( 	err,"ERR"    );    
 	LogElement( 	steer,"STEER");      
+	LogElement(     dgain,"DGain");
+	LogElement(     sgain,"SGain");
 }
 
 
