@@ -37,3 +37,4 @@ extern volatile DWORD LogCount;
 
 void LogServiceTask();
 
+
