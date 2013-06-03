@@ -11,10 +11,6 @@ unsigned short val[8];
 WORD  ReadingNum;
 };
 
-extern volatile bool bMode;
-extern volatile int nMode;
-extern volatile bool bGear;
-
 
 float DSM_Con(unsigned short v);
 extern volatile DSM2_READING DSM2_Result;

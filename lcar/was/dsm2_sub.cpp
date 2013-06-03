@@ -24,9 +24,6 @@ volatile DSM2_READING DSM2_Result;
 DWORD LastPit;
 volatile DWORD rcrx;
 
-volatile bool bMode;
-volatile int nMode;
-volatile bool bGear;
 
 unsigned char RCBuf[20];
 static int n;
@@ -48,16 +45,7 @@ if(n==16)
 		w|=RCBuf[(i*2)+1]; 
 		int ch=(w>>10) & 0x07;
 		DSM2_Result.val[ch]=(w& 0x3FF);
-
 	  }
-	  if(DSM2_Result.val[5]<400) nMode=0;
-	  else if(DSM2_Result.val[5]<600) nMode=1;
-	  else
-	  nMode=2;
-	  bGear=(DSM2_Result.val[4]>500);
-
-
-	  bMode=(DSM2_Result.val[6]>500);
 	  DSM2_Result.ReadingNum++;
 
     OSUnlock();

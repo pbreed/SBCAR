@@ -19,9 +19,8 @@ WORD ReadingNum;
 DWORD odo;
 float fIhead;
 float fMhead;
-float fgIHead;
 int GHeading;
-} __attribute__((packed)) ImuRegisters;
+}ImuRegisters;
 
 
 extern volatile	ImuRegisters IMU_Result;

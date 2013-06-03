@@ -1,12 +1,11 @@
 #include "car.h"
 #ifdef LITTLE_CAR
-#include "SerLog.cpp"
+#include "ublxgps.cpp"
 #elif BIG_CAR
-#include "NetLog.cpp"
+#include "bd960.cpp"
 #else
 #error No Car defined
 #endif
-
 
 
 

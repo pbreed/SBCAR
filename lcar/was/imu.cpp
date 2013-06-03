@@ -79,15 +79,6 @@ I2CStart(MAGADDR,false,2);
 I2CSend(0x0A);
 I2CSend(0x01);
 I2CStop(20);
-#ifdef BIG_CAR
-//Somethign is wrong with the Mx reading...
-long l=r.my;
-if (l<-17000) l+=65536;
-l-=16384;
-if(l<-32767) l=-32767;
-if(l>32767) l=32767;
-r.my=l;
-#endif
 }
 else
 {

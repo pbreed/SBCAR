@@ -70,7 +70,7 @@ typedef struct
  unsigned char len2;
  unsigned char flags;
  float hspeed;
- float head; //0 to 2pi
+ float head;
  float vv;
 } __attribute__(( packed) ) rec8;
 
@@ -90,11 +90,6 @@ typedef struct
  float variance;
  unsigned short epoch;
 } __attribute__(( packed) ) rec12;
-
-
-
-volatile BD960_GPS bd960_Result;
-volatile BD960_GPS tbd960_Result;
 
 
 
@@ -132,36 +127,16 @@ BYTE         GPSfix;         // GPSfix Type, range 0..6
 WORD         week;           // GPS week
 WORD         ReadingNum;  //Serial number of GPS reading
 }; 
-
-struct BD960_GPS
-{
-  double lattitude;
-  double longitude;
-  double ht;
-  unsigned char r8flags;
-  float hspeed;
-  float head;
-  float vv;
-  float rms_error;
-  float sigma_east;
-  float sigma_north;
-  float covaren;
-  float sigma_up;
-  float semi_major;
-  float semi_minor;
-  float orientaion;
-  float variance;
-  unsigned char flag1;
-  unsigned char flag2;
-};
-
-
 #endif
 
+volatile DWORD nr1,nr2,nr3,nr8,nr12,nrq;
+BYTE nrn;
 
 const double LL_Scale = (1E7*180.0/M_PI); 
 
 
+double dlat,dlon;
+BYTE f1,f2;
 
 unsigned char * ParseRecord(unsigned char * cp, unsigned int & len)
 {
@@ -179,20 +154,23 @@ switch(cp[0])
 		{rec1 * r1=(rec1*)cp;
 		TGPS_Result.numSV=r1->nsat;
 		TGPS_Result.week=r1->week; 
+        //TGps_Result.flag1=r1->flag1; 
+		//TGps_Result.flag2=r1->flag2; 
 
-		tbd960_Result.flag1=r1->flag1;
-		tbd960_Result.flag2=r1->flag2;
+		f1=r1->flag1;
+		f2=r1->flag2;
+		nr1++;
 		}
 		break;
 	   
 	case 2:
 		{rec2 * r2=(rec2*)cp;
+		dlat=r2->lattitude;
+		dlon=r2->longitude;
 		TGPS_Result.LAT=(int)(r2->lattitude*LL_Scale);
 		TGPS_Result.LON=(int)(r2->longitude*LL_Scale);
 		TGPS_Result.HEIGHT=(int)(r2->ht*1000.0);
-		tbd960_Result.lattitude=r2->lattitude;
-		tbd960_Result.longitude=r2->longitude;
-		tbd960_Result.ht=r2->ht;
+		nr2++;
 		}
 		break;
 	case 3:
@@ -200,38 +178,30 @@ switch(cp[0])
 		TGPS_Result.ECEF_X=(int)(r3->ECEF_X*100.0);
 		TGPS_Result.ECEF_Y=(int)(r3->ECEF_Y*100.0);
   	    TGPS_Result.ECEF_Z=(int)(r3->ECEF_Z*100.0);
+		nr3++;
 		}
-		break;
 	   
 	case 8:
 		{rec8 * r8=(rec8*)cp;
-		tbd960_Result.hspeed=r8->hspeed;
-		tbd960_Result.head=r8->head;
-		tbd960_Result.r8flags=r8->flags;
-		tbd960_Result.vv=r8->vv;
 		TGPS_Result.GSpeed=  (int)(r8->hspeed*100.0); 
 		r8->head*=180.0/M_PI;
+		if(r8->head<0) r8->head+=360.0;
 		TGPS_Result.Heading= (int)((r8->head*1.0E5)); 
+		nr8++;
 		}
 		break;
 
 	case 12:
 		{
 		rec12 * r12=(rec12*)cp;
-		bd960_Result.rms_error   = r12->rms_error;   
-		bd960_Result.sigma_east  = r12->sigma_east;  
-		bd960_Result.sigma_north = r12->sigma_north; 
-		bd960_Result.covaren     = r12->covaren;     
-		bd960_Result.sigma_up    = r12->sigma_up;    
-		bd960_Result.semi_major  = r12->semi_major;  
-		bd960_Result.semi_minor  = r12->semi_minor;  
-		bd960_Result.orientaion  = r12->orientaion;  
-		bd960_Result.variance    = r12->variance;    
-
 		 TGPS_Result.PAcc= (int)(r12->rms_error*100.0);
 		 TGPS_Result.Hacc=TGPS_Result.PAcc;
+		 nr12++;
 		}
 		break;
+default:
+	 nrn=cp[0];
+	 nrq++;
 
 	}
 cp+=cplen;
@@ -289,7 +259,6 @@ int UdpReceiveFunction(PEFRAME pf)
 	TGPS_Result.ReadingNum++;
 	OSLock();
 	memcpy((void *)&GPS_Result,(void *)&TGPS_Result,sizeof(GPS_Result));
-	memcpy((void *)&bd960_Result,(void *)&tbd960_Result,sizeof(bd960_Result));
 	OSUnlock();                          
 	if(pDataSem)OSSemPost(pDataSem);
 	RxPkt++;
