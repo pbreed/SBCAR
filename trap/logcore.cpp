@@ -292,11 +292,6 @@ void ShowTrap(Captured_Trap &item)
 	LogElement(a7,"a7");
 	LogElement(prio,"Prio");
 	LogElement(sr,"SR");
-	LogElement(frame,"FV");
-	LogElement(next,"NX");
-	LogElement(lab,"LB");
-
-
 }
 
 
@@ -307,11 +302,6 @@ cap_trap.vec=0;
 cap_trap.pc=0;
 cap_trap.a7=0;
 cap_trap.prio=0;
-cap_trap.sr=0;
-cap_trap.frame=0;
-cap_trap.next=0;
-
-
 }
 
 void DumpRecords()

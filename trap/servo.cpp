@@ -117,7 +117,7 @@ bool SwitchState()
 #ifdef LITTLE_CAR
 return false;
 #elif BIG_CAR
-return (CPU_Pins[18].read()!=0);
+return (CPU_Pins[16].read()==0);
 #endif
 return false;
 }
@@ -136,10 +136,10 @@ CPU_Pins[8].function(CPUPIN8_DTIN0);
 CPU_Pins[9].function(CPUPIN9_DTOUT1 );
 CPU_Pins[13].function(CPUPIN13_DTOUT2);
 CPU_Pins[14].function(CPUPIN14_DTOUT3);
-CPU_Pins[17].function(CPUPIN17_GPIO);
-CPU_Pins[18].function(CPUPIN18_GPIO);
-CPU_Pins[17]=0;
-CPU_Pins[18].read();
+CPU_Pins[15].function(CPUPIN15_GPIO);
+CPU_Pins[16].function(CPUPIN16_GPIO);
+CPU_Pins[15]=1;
+CPU_Pins[16].read();
 
 
 CPU_Pins[61].function(CPUPIN61_GPIO);   

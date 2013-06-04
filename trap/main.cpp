@@ -245,7 +245,7 @@ void DoStartNav()
 
 
 
-bool DoNav_is_Done()
+void DoNav()
 {
 static NavState result;
 GetState(GPS_Result.LAT,GPS_Result.LON,nav_s,result);
@@ -262,11 +262,10 @@ if(result.bPassed)
  }
  else
  {//Loop over and over
-	 return true;
-//	 SetupSegment(WP[wp_num-1][0],WP[wp_num-1][1], WP[0][0],WP[0][1], nav_s);
-//	 Target_Heading=(nav_s.bearing*180.0/M_PI)+DECLINATION;
-//	 Offset_Heading=0;
-//	 wp_num=0;
+	 SetupSegment(WP[wp_num-1][0],WP[wp_num-1][1], WP[0][0],WP[0][1], nav_s);
+	 Target_Heading=(nav_s.bearing*180.0/M_PI)+DECLINATION;
+	 Offset_Heading=0;
+	 wp_num=0;
  }
 
 }
@@ -274,7 +273,7 @@ else
 Offset_Heading=(double)OffsetHeadingGain*result.cross;
 
 LogRecord(result);
-return false;
+
 }
 
 
@@ -342,8 +341,19 @@ void UserMain(void *pd)
 	SetServo(1,0);
 	SetServo(2,0);
 	SetServo(3,0);
-	iprintf("Switch=%d\r\n",SwitchState());
 
+
+	while(1)
+	{
+		CPU_Pins[17]=1;
+	OSTimeDly(2);
+	 iprintf("W 17=1 %d\r\n",CPU_Pins[18].read());
+	OSTimeDly(2);
+	CPU_Pins[17]=0;
+	OSTimeDly(2);
+	iprintf("W 17=0 %d\r\n",CPU_Pins[18].read());
+	OSTimeDly(20);
+	}
 
 	WORD LastGps=GPS_Result.ReadingNum;
 	WORD LastRc =DSM2_Result.ReadingNum;
@@ -361,15 +371,12 @@ void UserMain(void *pd)
 	long GZSum=0;
 	int  GZCnt=0;
 	float fmh=0.0;
-	bool bRunning=false;
-	bool bArm=false;
 	
 	iprintf("Starting zero..\r\n");
 
 	while(ZeroTime > Secs)
 	{
 		OSSemPend(&DataSem,20);
-		
 		if(LastImu !=IMU_Result.ReadingNum)
 			{
 			GZSum+=IMU_Result.gz;
@@ -378,22 +385,13 @@ void UserMain(void *pd)
 
 			if (IMU_Result.mx !=0 ) 
 				fmh=CalcMagHeading(IMU_Result.mx,IMU_Result.my);
+				
+
             }
 
 	 
 	}
 	iprintf("Zero done\r\n");
-	iprintf("Switch=%d\r\n",SwitchState());
-
-	
-	for(int i=0; i<64; i++) 
-		{if(sim.intc[0].icrn[i]>7) 
-			{
-			BYTE v=sim.intc[0].icrn[i];
-			
-			iprintf("ICRN[%d]=[%02X] lvl %d prio %d\r\n",i,v,v>>3, v & 0x07);
-		    }
-	    }
 	
    gzoff=(GZSum/GZCnt);
 	fimHeading=fmh;
@@ -411,14 +409,7 @@ void UserMain(void *pd)
 	{
 		LastGps=GPS_Result.ReadingNum;
 	    LogSmGps(GPS_Result); 
-		if(bRunning)
-		{
-			if(DoNav_is_Done())
-			{
-				bRunning=false;
-				SetServo(THROTTLE_CH,0.0);
-			}
-		}
+		if(bMode) DoNav();
 		//LogTGps(bd960_Result);
 	}
 	
@@ -435,54 +426,11 @@ void UserMain(void *pd)
 	  LogRC(DSM2_Result);
 	}
 
-	if(!bMode) {
-				bRunning=false;
-				bArm=false;
-				}
-
-	if(bRunning)
-	{
-		if(	ServoUsed[THROTTLE_CH])
-	 {
-		 if(nMode!=0) 
-			 SetServo(THROTTLE_CH,ftThrottle);
-		 else
-			 SetServo(THROTTLE_CH,DSM_Con(590));
-
-		 ServoUsed[THROTTLE_CH]=false;
-
-	 }
-
-	 if(	ServoUsed[STEER_CH])
-	 {
-		 DoSteer();
-		 ServoUsed[STEER_CH]=false;
-	 }
-	}
-	else
-	{
-	
-	if((bMode) && (SwitchState()) && (bArm))
-	{
-	  DoStartNav();
-	  bRunning=true;
-	  bArm=false;
-	}
-	if ((bMode ) && (!SwitchState()) )
-	{
-		bArm=true;
-	}
-
-
-
-
 	if(	ServoUsed[THROTTLE_CH])
-	{	if(!bMode)
+	{
 		SetServo(THROTTLE_CH,ftThrottle);
-		else
-		SetServo(THROTTLE_CH,0.0);
-
 		ServoUsed[THROTTLE_CH]=false;
+
 	}
 
     if(	ServoUsed[STEER_CH])
@@ -490,10 +438,10 @@ void UserMain(void *pd)
 		if(!bMode)
 		SetServo(STEER_CH,ftSteer*STEER_SIGN);
 		else
-	    SetServo(STEER_CH,0);
+		DoSteer();
 		ServoUsed[STEER_CH]=false;
 	}
-	}
+
 
 	if(LSecs!=Secs) 
 		{

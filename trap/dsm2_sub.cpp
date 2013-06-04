@@ -28,20 +28,17 @@ volatile bool bMode;
 volatile int nMode;
 volatile bool bGear;
 
-
-static unsigned char RCBuf[64];
-static unsigned char  nc;
-
+unsigned char RCBuf[20];
+static int n;
 void ParseDSMChar(char c)
 {
 rcrx++;
-if ((LastPit+4)<=Pit_Count) nc=0;
-
+if ((LastPit+4)<=Pit_Count) n=0;
 LastPit=Pit_Count;
 
-RCBuf[nc++]=c;
+RCBuf[n++]=c;
 
-if(nc==16)
+if(n==16)
 	{
 	OSLock();
 	  for(int i=1; i<8; i++)
@@ -65,9 +62,8 @@ if(nc==16)
 
     OSUnlock();
 	if (TheLocalSem) {OSSemPost(TheLocalSem);}
-	nc=0;
 	}
-if(nc>=19) nc=18;
+if(n>=19) n=18;
 }
 
 

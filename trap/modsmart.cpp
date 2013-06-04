@@ -253,27 +253,14 @@ void Smart_Trap_Holder()
         Local_OutString( "\r\nTrap Vector        =" );
 
 		cap_trap.a7=smart_trap_a7;
-		cap_trap.lab=0xDEADBEEF;
 
         if ( !corrupt )
         {
-            PDWORD pdw=(PDWORD) smart_trap_a7 ; 
-			pc = pdw[1];
-            DWORD frame =pdw[0];
+            pc = *( ( (PDWORD) smart_trap_a7 ) + 1 );
+            DWORD frame = *( (PDWORD) smart_trap_a7 );
             DWORD n = ( frame >> 18 ) & 0xFF;
 			cap_trap.vec=n;
 			cap_trap.pc=pc;
-			cap_trap.frame=frame;
-			cap_trap.next=pdw[-1];
-
-			Local_OutString( "\r\nS[-2]=" ); Local_OutHex( pdw[-2], 4 );
-			Local_OutString( "\r\nS[-1]=" ); Local_OutHex( pdw[-1], 4 );
-			Local_OutString( "\r\nS[0]=" ); Local_OutHex( pdw[0], 4 );
-			Local_OutString( "\r\nS[1]=" ); Local_OutHex( pdw[1], 4 );
-			Local_OutString( "\r\nS[2]=" ); Local_OutHex( pdw[2], 4 );
-
-
-
 
             switch ( n ) {
             case 2:

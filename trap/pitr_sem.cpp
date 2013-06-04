@@ -48,7 +48,7 @@ sim.pit[1].pmr = ((CPU_CLOCK/div)/pit_per_sec); // Set the PIT modulus value
 sim.pit[1].pcsr =pcsr;
 
 
-SetIntc0( ( long ) &my_pitr_func, 56, 6, 3 );
+SetIntc0( ( long ) &my_pitr_func, 56, 2 /* IRQ 2 */, 3 );
 
 }
 

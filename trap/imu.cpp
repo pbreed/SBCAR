@@ -47,7 +47,7 @@ volatile	ImuRegisters IMU_Result;
 static ImuRegisters Local_IMU_Result; 
 OS_SEM * LocalSem;
  
-#define SM_TASK_STK (512)
+#define SM_TASK_STK (256)
 #define SmOSSimpleTaskCreate(x,p) { static DWORD   func_##x_Stk[SM_TASK_STK] __attribute__( ( aligned( 4 ) ) ); OSTaskCreate(x,NULL,(void *)&func_##x_Stk[SM_TASK_STK],(void*)func_##x_Stk,p); }
 
 
